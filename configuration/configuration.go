@@ -88,8 +88,8 @@ func (c *MainConfiguration) setUpLog() {
 	c.Logging.App = utils.Name
 	c.Logging.Version = utils.Version
 	c.Logging.Component = "config_loader"
-	c.Logging.FileMaxSize = 80
-	c.Logging.FileMaxBackups = 10
+	c.Logging.FileMaxSize = 10
+	c.Logging.FileMaxBackups = 5
 	c.Log = logging.SetupLog(c.Logging)
 }
 
