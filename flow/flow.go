@@ -81,7 +81,7 @@ type Flow struct {
 	ifIndex          uint16
 }
 
-func NewFlow2(parameters ParserParameters, info gopacket.CaptureInfo, iface net.Interface) Flow {
+func NewFlow(parameters ParserParameters, info gopacket.CaptureInfo, iface net.Interface) Flow {
 	var flow Flow
 	key := &flow.key
 	flow.ifIndex = uint16(iface.Index)

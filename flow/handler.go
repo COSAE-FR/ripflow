@@ -97,7 +97,7 @@ func (handler *PacketHandler) Listen() {
 			if err != nil {
 				handler.log.Tracef("Error when decoding packet: %s", err)
 			}
-			flow := NewFlow2(pp, packet.Metadata().CaptureInfo, *handler.iface)
+			flow := NewFlow(pp, packet.Metadata().CaptureInfo, *handler.iface)
 			if flow.key.ipVersion == 0 {
 				handler.log.Tracef("Not an IP packet: %s, layers: %v", flow.String(), pp.decoded)
 				continue
