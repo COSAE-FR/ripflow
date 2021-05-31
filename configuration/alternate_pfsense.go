@@ -28,8 +28,8 @@ func NewAlternateConfiguration(path string) (*MainConfiguration, error) {
 
 type proxyPackageConfiguration struct {
 	packages.BasePackageConfig
-	Ripflow         *pfsense.RipflowConfig   `xml:"netflow>config"`
-	RipflowCaptures []pfsense.RipflowCapture `xml:"netflowcaptures>config"`
+	Ripflow         *pfsense.RipflowConfig         `xml:"netflow>config"`
+	RipflowCaptures []pfsense.RipflowCaptureConfig `xml:"netflowcaptures>config"`
 }
 
 type ripSenseConfiguration struct {

@@ -87,12 +87,11 @@ func (handler *PacketHandler) Listen() {
 	}
 	pp.parser.IgnoreUnsupported = true
 	for {
-		var packet gopacket.Packet
 		select {
 		case <-handler.killSwitch:
 			handler.log.Info("Received a listener kill switch")
 			return
-		case packet = <-in:
+		case packet := <-in:
 			err := pp.parser.DecodeLayers(packet.Data(), &pp.decoded)
 			if err != nil {
 				handler.log.Tracef("Error when decoding packet: %s", err)
@@ -103,7 +102,6 @@ func (handler *PacketHandler) Listen() {
 				continue
 			}
 			handler.Worker <- flow
-
 		}
 	}
 }

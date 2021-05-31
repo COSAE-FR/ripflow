@@ -8,7 +8,7 @@ type RipflowConfig struct {
 	CollectorPort    uint16            `xml:"collectorport"`
 }
 
-type RipflowCapture struct {
+type RipflowCaptureConfig struct {
 	Enable      helpers.YesNoBool `xml:"enable"`
 	Interface   string            `xml:"interface"`
 	Filter      string            `xml:"filter"`
