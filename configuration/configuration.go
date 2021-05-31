@@ -115,14 +115,18 @@ func (c *MainConfiguration) Read() error {
 }
 
 func New(path string) (*MainConfiguration, error) {
-	config := MainConfiguration{
+	config, err := NewAlternateConfiguration(path)
+	if err == nil {
+		return config, err
+	}
+	config = &MainConfiguration{
 		path: path,
 	}
-	err := config.Read()
+	err = config.Read()
 	if err != nil {
-		return &config, err
+		return config, err
 	}
 	config.setUpLog()
 	err = config.check()
-	return &config, err
+	return config, err
 }
