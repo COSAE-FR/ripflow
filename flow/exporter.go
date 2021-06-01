@@ -17,6 +17,7 @@ const (
 
 type Exporter struct {
 	Input          chan Flow
+	lastFlow       *Flow
 	usedBufferSize uint32
 	TotalFlowCount uint32
 	BaseTime       time.Time
@@ -65,6 +66,9 @@ func (e *Exporter) Start() error {
 
 func (e *Exporter) Stop() error {
 	e.killSwitch <- 1
+	if err := e.flushBuffer(); err != nil {
+		e.log.Errorf("Cannot flush exporter buffer: %s", err)
+	}
 	err := e.connection.Close()
 	if err != nil {
 		return err
@@ -86,6 +90,7 @@ func (e *Exporter) ExportNetflow5(flow Flow) error {
 		binary.BigEndian.PutUint16(e.buffer[22:], uint16(0)) // sample rate
 		e.usedBufferSize = netflow5HeaderSize
 	}
+	e.lastFlow = &flow
 	if e.usedBufferSize+netflow5RecordSize <= exportBufferSize {
 		flow.SerializeNetflow5(e.buffer[e.usedBufferSize:],
 			e.BaseTime)
@@ -93,14 +98,21 @@ func (e *Exporter) ExportNetflow5(flow Flow) error {
 	}
 	// header update
 	if e.usedBufferSize+netflow5RecordSize > exportBufferSize {
+		return e.flushBuffer()
+	}
+	return nil
+}
+
+func (e *Exporter) flushBuffer() error {
+	if e.usedBufferSize > netflow5HeaderSize && e.lastFlow != nil {
 		flowCount := uint16((exportBufferSize - netflow5HeaderSize) / netflow5RecordSize)
 		e.TotalFlowCount += uint32(flowCount)
 		binary.BigEndian.PutUint16(e.buffer[2:], flowCount)
 		binary.BigEndian.PutUint32(e.buffer[4:],
-			uint32(flow.end.Sub(e.BaseTime).Nanoseconds()/int64(time.Millisecond)))
-		binary.BigEndian.PutUint32(e.buffer[8:], uint32(flow.end.Unix()))
+			uint32(e.lastFlow.end.Sub(e.BaseTime).Nanoseconds()/int64(time.Millisecond)))
+		binary.BigEndian.PutUint32(e.buffer[8:], uint32(e.lastFlow.end.Unix()))
 		binary.BigEndian.PutUint32(e.buffer[12:],
-			uint32(flow.end.UnixNano()-flow.end.Unix()*int64(time.Nanosecond)))
+			uint32(e.lastFlow.end.UnixNano()-e.lastFlow.end.Unix()*int64(time.Nanosecond)))
 		binary.BigEndian.PutUint32(e.buffer[16:], e.TotalFlowCount)
 		_, err := e.connection.Write(e.buffer[:e.usedBufferSize]) // UDP Send
 		e.usedBufferSize = netflow5HeaderSize
