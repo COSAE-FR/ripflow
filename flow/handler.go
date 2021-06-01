@@ -36,11 +36,12 @@ type ParserParameters struct {
 }
 
 type PacketHandler struct {
-	handle     *pcap.Handle
-	iface      *net.Interface
-	Worker     chan Flow
-	killSwitch chan int
-	log        *log.Entry
+	handle       *pcap.Handle
+	iface        *net.Interface
+	Worker       chan Flow
+	killSwitch   chan int
+	ifaceWasDown bool
+	log          *log.Entry
 }
 
 func (handler *PacketHandler) SetFilter(filter string) error {
@@ -63,6 +64,8 @@ func NewHandler(iface *net.Interface, worker chan Flow, logger *log.Entry) (*Pac
 		handler.log.Warnf("Interface %s is down", iface.Name)
 		if err := utils.NetInterfaceUp(*iface); err != nil {
 			handler.log.Errorf("Cannot bring %s up: %s", iface.Name, err)
+		} else {
+			handler.ifaceWasDown = true
 		}
 	}
 	handle, err := pcap.OpenLive(iface.Name, 65536, true, pcap.BlockForever)
@@ -122,5 +125,10 @@ func (handler *PacketHandler) Start() error {
 func (handler *PacketHandler) Stop() error {
 	handler.killSwitch <- 1
 	handler.handle.Close()
+	if handler.ifaceWasDown {
+		if err := utils.NetInterfaceDown(*handler.iface); err != nil {
+			handler.log.Errorf("Cannot bring %s down: %s", handler.iface.Name, err)
+		}
+	}
 	return nil
 }
