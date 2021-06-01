@@ -1,11 +1,13 @@
 package flow
 
 import (
+	"github.com/COSAE-FR/ripflow/utils"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	log "github.com/sirupsen/logrus"
 	"net"
+	"strings"
 )
 
 type PacketLayers struct {
@@ -56,6 +58,12 @@ func NewHandler(iface *net.Interface, worker chan Flow, logger *log.Entry) (*Pac
 			"component": "capture",
 			"interface": iface.Name,
 		}),
+	}
+	if !strings.Contains(iface.Flags.String(), "up") {
+		handler.log.Warnf("Interface %s is down", iface.Name)
+		if err := utils.NetInterfaceUp(*iface); err != nil {
+			handler.log.Errorf("Cannot bring %s up: %s", iface.Name, err)
+		}
 	}
 	handle, err := pcap.OpenLive(iface.Name, 65536, true, pcap.BlockForever)
 	if err != nil {
